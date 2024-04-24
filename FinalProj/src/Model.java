@@ -102,5 +102,20 @@ public class Model {
         }
 
     }
+        public boolean authenticateUser(String username, String password) {
+        try {
+            Connection conn = DriverManager.getConnection(url);
+            String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+            PreparedStatement preparedStatement = conn.prepareStatement(query);
+            preparedStatement.setString(1, username);
+            preparedStatement.setString(2, password);
+            ResultSet rs = preparedStatement.executeQuery();
+            boolean exists = rs.next();
+            conn.close();
+            return exists;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
     
 }
