@@ -65,5 +65,41 @@ public class Model {
         return user;
     }
 
+ public void setBalance(int newBalance, int userId){
+        try {
+            Connection conn = DriverManager.getConnection(url);
+            String updateBalance = """
+                    UPDATE users
+                    SET balance = ?
+                    WHERE user_id = ?;
+                    """;
+            PreparedStatement preparedStatement = conn.prepareStatement(updateBalance);
+            preparedStatement.setInt(1, newBalance);
+            preparedStatement.setInt(2, userId);
+            preparedStatement.executeUpdate();
+            conn.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
+    public int getBalance(String userID){
+        try {
+            Connection conn = DriverManager.getConnection(url);
+            String selectBalance = """
+                    SELECT balance FROM users WHERE user_id = ?;
+                    """;
+            PreparedStatement preparedStatement = conn.prepareStatement(selectBalance);
+            preparedStatement.setString(1, userID);
+            ResultSet rs = preparedStatement.executeQuery();
+
+            int balance = rs.getInt("balance");
+            conn.close();
+            return balance;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+    
 }
