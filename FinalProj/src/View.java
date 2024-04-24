@@ -1,41 +1,46 @@
-package src;
-
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionListener;
 
 public class View {
 
     public JTextField inputUsernameField;
     public JTextField inputPasswordField;
-    public View(//actionlistener
-    ){
-        JFrame frame = new JFrame();
+    private JFrame frame;
+
+    public View(ActionListener actionListener) {
+        frame = new JFrame();
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         JTabbedPane tabPanel = new JTabbedPane();
-
-        JPanel page1 = new JPanel();
+        JPanel loginPanel = new JPanel();
 
         inputUsernameField = new JTextField(15);
         inputPasswordField = new JTextField(15);
-        JButton computeButton = new JButton("LOGIN");
+        JButton loginButton = new JButton("LOGIN");
+        loginButton.addActionListener(actionListener); // Set the controller as the listener
 
-        page1.add(new JLabel("Username"));
-        page1.add(inputUsernameField);
+        loginPanel.add(new JLabel("Username"));
+        loginPanel.add(inputUsernameField);
+        loginPanel.add(new JLabel("Password"));
+        loginPanel.add(inputPasswordField);
+        loginPanel.add(loginButton);
 
-        page1.add(new JLabel("Password"));
-        page1.add(inputPasswordField);
-        page1.add(computeButton);
-
-        tabPanel.addTab("Login", page1);
-
-        //computeButton.addActionListener(actionListener);
+        tabPanel.addTab("Login", loginPanel);
 
         frame.add(tabPanel);
-
-        frame.getContentPane().add(tabPanel);
         frame.setSize(350, 350);
         frame.setVisible(true);
+    }
+
+    public void showGameTab() {
+        // Switch to game tab
+    }
+
+    public void showLoginError() {
+        JOptionPane.showMessageDialog(frame, "Invalid username or password!");
+    }
+
+    public void setVisible(boolean visible) {
+        frame.setVisible(visible);
     }
 }
