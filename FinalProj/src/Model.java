@@ -6,14 +6,14 @@ import java.util.ArrayList;
 public class Model {
     private String url;
     public Model(){
-        url = "jdbc:sqlite:database.Users";
+        url = "jdbc:sqlite:database.db";
         try {
             Connection conn = DriverManager.getConnection(url);
             String createTableCmd = "CREATE TABLE IF NOT EXISTS users (" +
-                    "user_id = INTEGER PRIMARY KEY" +
-                    "username = STRING UNIQUE NOT NULL"+
-                    "password = STRING UNIQUE NOT NULL" +
-                    "balance = INTEGER NOT NULL);";
+                    "user_id INTEGER PRIMARY KEY," +
+                    "username TEXT UNIQUE NOT NULL,"+
+                    "password TEXT NOT NULL," +
+                    "balance INTEGER NOT NULL);";
             conn.createStatement().executeUpdate(createTableCmd);
             conn.close();
         } catch (SQLException e) {
@@ -66,7 +66,7 @@ public class Model {
         return user;
     }
 
- public void setBalance(int newBalance, int userId){
+    public void setBalance(int newBalance, int userId){
         try {
             Connection conn = DriverManager.getConnection(url);
             String updateBalance = """
@@ -102,7 +102,7 @@ public class Model {
         }
 
     }
-        public boolean authenticateUser(String username, String password) {
+    public boolean authenticateUser(String username, String password) {
         try {
             Connection conn = DriverManager.getConnection(url);
             String query = "SELECT * FROM users WHERE username = ? AND password = ?";
@@ -117,5 +117,5 @@ public class Model {
             throw new RuntimeException(e);
         }
     }
-    
+
 }
