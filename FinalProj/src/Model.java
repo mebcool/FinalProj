@@ -1,7 +1,7 @@
-
 import java.sql.*;
 import java.util.ArrayList;
-
+import java.util.Collections;
+import java.util.TreeMap;
 
 public class Model {
     private String url;
@@ -116,6 +116,28 @@ public class Model {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public TreeMap<Integer, String> getAllUserBalances(){
+        TreeMap<Integer, String> balanceTreeMap = new TreeMap<Integer, String>(Collections.reverseOrder());
+
+        try {
+            Connection conn = DriverManager.getConnection(url);
+            String balanceQuery = """
+                SELECT balance, username FROM users;
+                """;
+            ResultSet rs = conn.createStatement().executeQuery(balanceQuery);
+
+            while(rs.next()){
+                Integer balance = rs.getInt("balance");
+                String username = rs.getString("username");
+                balanceTreeMap.put(balance, username);
+            }
+            conn.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return balanceTreeMap;
     }
 
 }
