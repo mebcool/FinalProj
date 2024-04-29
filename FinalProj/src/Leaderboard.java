@@ -36,7 +36,7 @@ public class Leaderboard {
             readableLeaderboard.add(readableEntry);
             place++;
         }
-
+        System.out.println("getleaderboard: "+readableLeaderboard);
         return readableLeaderboard;
     }
 }

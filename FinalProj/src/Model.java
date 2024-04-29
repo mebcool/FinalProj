@@ -1,7 +1,9 @@
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.TreeMap;
+
 
 public class Model {
     private String url;
@@ -66,32 +68,34 @@ public class Model {
         return user;
     }
 
-    public void setBalance(int newBalance, int userId){
+    public void setBalance(String username, int newBalance){
         try {
+            System.out.println("in setbalance, updating "+username+ " to newbalance: "+newBalance);
             Connection conn = DriverManager.getConnection(url);
             String updateBalance = """
                     UPDATE users
                     SET balance = ?
-                    WHERE user_id = ?;
+                    WHERE username = ?;
                     """;
             PreparedStatement preparedStatement = conn.prepareStatement(updateBalance);
             preparedStatement.setInt(1, newBalance);
-            preparedStatement.setInt(2, userId);
+            preparedStatement.setString(2, username);
             preparedStatement.executeUpdate();
+            System.out.println(username + " after setbalance, balance is: $"+getBalance(username));
             conn.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public int getBalance(String userID){
+    public int getBalance(String username){
         try {
             Connection conn = DriverManager.getConnection(url);
             String selectBalance = """
-                    SELECT balance FROM users WHERE user_id = ?;
+                    SELECT balance FROM users WHERE username = ?;
                     """;
             PreparedStatement preparedStatement = conn.prepareStatement(selectBalance);
-            preparedStatement.setString(1, userID);
+            preparedStatement.setString(1, username);
             ResultSet rs = preparedStatement.executeQuery();
 
             int balance = rs.getInt("balance");
@@ -117,7 +121,6 @@ public class Model {
             throw new RuntimeException(e);
         }
     }
-
     public TreeMap<Integer, String> getAllUserBalances(){
         TreeMap<Integer, String> balanceTreeMap = new TreeMap<Integer, String>(Collections.reverseOrder());
 
@@ -127,6 +130,7 @@ public class Model {
                 SELECT balance, username FROM users;
                 """;
             ResultSet rs = conn.createStatement().executeQuery(balanceQuery);
+            System.out.println("rs from getall userbalances:" + rs);
 
             while(rs.next()){
                 Integer balance = rs.getInt("balance");

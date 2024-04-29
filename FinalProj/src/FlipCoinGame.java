@@ -31,6 +31,5 @@ public class FlipCoinGame extends Game{
             payout = bet * -1;
         }
         return payout;
-
     }
 }
