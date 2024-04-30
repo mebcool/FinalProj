@@ -41,33 +41,6 @@ public class Model {
         }
     }
 
-    public ArrayList<String> getUser(String username){
-        ArrayList<String> user = new ArrayList<String>();
-        try {
-
-            Connection conn = DriverManager.getConnection(url);
-            String getUserCmd = """
-                     SELECT * FROM users WHERE username = ?;
-                    """;
-            PreparedStatement preparedStatement = conn.prepareStatement(getUserCmd);
-            preparedStatement.setString(1, username);
-            ResultSet rs = preparedStatement.executeQuery();
-
-
-            String id = Integer.toString(rs.getInt("user_id"));
-            user.add(id);
-            user.add(username);
-            String password = rs.getString("password");
-            user.add(password);
-            String balance = Integer.toString(rs.getInt("balance"));
-            user.add(balance);
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return user;
-    }
-
     public void setBalance(String username, int newBalance){
         try {
             System.out.println("in setbalance, updating "+username+ " to newbalance: "+newBalance);
@@ -136,11 +109,13 @@ public class Model {
                 Integer balance = rs.getInt("balance");
                 String username = rs.getString("username");
                 balanceTreeMap.put(balance, username);
+                System.out.println("Username: " + username + ", Balance: " + balance);
             }
             conn.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        System.out.println("balancetreemap from model: "+balanceTreeMap);
         return balanceTreeMap;
     }
 

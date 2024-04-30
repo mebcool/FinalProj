@@ -1,42 +1,46 @@
-import javax.imageio.IIOParam;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class View {
-    public JTextField inputUsernameField, inputPasswordField;
-    JFrame frame;
-    JTabbedPane tabPanel;
-    private JPanel loginPanel, coinFlipPanel, diceGamePanel;
-    public JLabel userInfoLabel; // This label is used across panels and should not be re-added.
+    private JTextField inputUsernameField, inputPasswordField,betAmountFieldCF,betAmountFieldDG;
+    private JTextArea leaderboardTextArea;
+    private JFrame frame;
+    private JTabbedPane tabPanel;
+    private JLabel userInfoLabel;
     private ActionListener actionListener;
     private Controller controller;
+    private ButtonGroup diceBetGroup;
+    private ButtonGroup coinBetGroup;
 
-    public View(ActionListener actionListener) {
-        this.actionListener = actionListener;
-        this.controller = (Controller) actionListener;
+    public View(Controller controller) {
+        this.controller = controller;
+        this.actionListener = controller;
         frame = new JFrame("Game Client");
-        frame.setLayout(new BorderLayout());  // Set BorderLayout for the frame
+        frame.setLayout(new BorderLayout());
+        leaderboardTextArea = new JTextArea(10, 30); // Initialize here
+        leaderboardTextArea.setEditable(false);
 
-        userInfoLabel = new JLabel("User: "); // Initialize with default text.
-        frame.add(userInfoLabel, BorderLayout.NORTH); // Keep userInfoLabel always at the top
+        userInfoLabel = new JLabel("User: ");
+        frame.add(userInfoLabel, BorderLayout.NORTH);
 
         tabPanel = new JTabbedPane();
         createLoginTab();
 
-        frame.add(tabPanel, BorderLayout.CENTER); // Ensure tabPanel is only in the center
-        frame.setSize(600,600);
+        frame.add(tabPanel, BorderLayout.CENTER);
+        frame.setSize(900, 600);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
-
     }
 
     private void createLoginTab() {
-        loginPanel = new JPanel();
+        JPanel loginPanel = new JPanel();
         inputUsernameField = new JTextField(15);
         inputPasswordField = new JTextField(15);
         JButton loginButton = new JButton("LOGIN");
+        loginButton.setActionCommand("LOGIN");
         loginButton.addActionListener(actionListener);
 
         loginPanel.add(new JLabel("Username:"));
@@ -49,145 +53,167 @@ public class View {
     }
 
     public void showGameTab(String username, int balance, ArrayList<String> leaderboardData) {
-        tabPanel.removeAll(); // Clear previous tabs
-        updateUserInfo(username, balance); // Update user info immediately after login
+        tabPanel.removeAll();
 
-        coinFlipPanel = createCoinFlipPanel();
-        diceGamePanel = createDiceGamePanel();
+        updateUserInfo(username, balance);
+
+        JPanel coinFlipPanel = createCoinFlipPanel();
+        JPanel diceGamePanel = createDiceGamePanel();
+        JPanel leaderboardPanel = createLeaderboardPanel();
 
         tabPanel.addTab("Coin Flip", coinFlipPanel);
         tabPanel.addTab("Dice", diceGamePanel);
-
-        // Add the leaderboard tab
-        tabPanel.addTab("Leaderboard", new JScrollPane(new JTextArea()));
-
-        // Add a ChangeListener to the tabPanel to update the leaderboard when the leaderboard tab is selected
-        tabPanel.addChangeListener(e -> {
-            if (tabPanel.getSelectedIndex() == tabPanel.indexOfTab("Leaderboard")) {
-                updateLeaderboardTab(leaderboardData);
-            }
-        });
+        tabPanel.addTab("Leaderboard", leaderboardPanel);
 
         createLogoutTab();
     }
 
-
     private JPanel createCoinFlipPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-
-        // Options Panel for Heads or Tails
-        JPanel optionsPanel = new JPanel(new FlowLayout());
-        ButtonGroup group = new ButtonGroup();
-
-        // Create image icons for the buttons
-        ImageIcon origIcon = new ImageIcon(getClass().getResource("/heads.jpg")); // Adjust path as needed
-        Image img = origIcon.getImage();
-        Image resizedImg = img.getScaledInstance(94, 66, Image.SCALE_SMOOTH); // Specify desired width and height
-        ImageIcon headsIcon = new ImageIcon(resizedImg);
-        ImageIcon origIcon2 = new ImageIcon(getClass().getResource("/tails.jpg")); // Adjust path as needed
-        Image img2 = origIcon2.getImage();
-        Image resizedImg2 = img2.getScaledInstance(94, 66, Image.SCALE_SMOOTH); // Specify desired width and height
-        ImageIcon tailsIcon = new ImageIcon(resizedImg2);
-
-        JToggleButton headsButton = new JToggleButton(headsIcon);
+        JToggleButton headsButton = new JToggleButton(new ImageIcon(getClass().getResource("/heads.jpg")));
         headsButton.setActionCommand("Heads");
+        headsButton.setBackground(Color.BLACK);
+        headsButton.setForeground(Color.WHITE);
 
-        JToggleButton tailsButton = new JToggleButton(tailsIcon);
+        JToggleButton tailsButton = new JToggleButton(new ImageIcon(getClass().getResource("/tails.jpg")));
         tailsButton.setActionCommand("Tails");
+        tailsButton.setBackground(Color.BLACK);
+        tailsButton.setForeground(Color.WHITE);
 
+        coinBetGroup = new ButtonGroup();
+        coinBetGroup.add(headsButton);
+        coinBetGroup.add(tailsButton);
 
-        group.add(headsButton);
-        group.add(tailsButton);
-        optionsPanel.add(headsButton);
-        optionsPanel.add(tailsButton);
-        optionsPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 50, 50)); // Adjust horizontal and vertical gaps
+        JPanel optionsPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        optionsPanel.add(headsButton, gbc);
+        optionsPanel.add(tailsButton, gbc);
 
-
-        // Bet Panel for amount input and bet action
-        JPanel betPanel = new JPanel(new FlowLayout());
-        JTextField betAmountField = new JTextField(5);
+        betAmountFieldCF = new JTextField(5);
         JButton placeBetButton = new JButton("Flip Coin");
+        placeBetButton.setBackground(Color.BLACK);
+        placeBetButton.setForeground(Color.WHITE);
+
+        JPanel betPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        betPanel.add(new JLabel("Bet Amount:"));
+        betPanel.add(betAmountFieldCF);
+        betPanel.add(placeBetButton);
+        placeBetButton.setActionCommand("PLACE_BET_COIN");
         placeBetButton.addActionListener(e -> {
-            String betType = headsButton.isSelected() ? "Heads" : "Tails";
-            String betAmount = betAmountField.getText();
-            controller.placeCoinBet(betType, betAmount);
+            String betAmountCF = getBetCF();
+            if (betAmountCF.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "You must place a bet", "No Bet Placed", JOptionPane.ERROR_MESSAGE);
+            } else {
+                try {
+                    controller.placeCoinBet(headsButton.isSelected() ? "Heads" : "Tails", betAmountCF);
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(frame, "Error communicating with the server: " + ex.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
         });
 
-        betPanel.add(new JLabel("Bet Amount:"));
-        betPanel.add(betAmountField);
-        betPanel.add(placeBetButton);
-
-        panel.add(optionsPanel, BorderLayout.NORTH);
+        panel.add(optionsPanel, BorderLayout.CENTER);
         panel.add(betPanel, BorderLayout.SOUTH);
 
         return panel;
     }
 
-
     private JPanel createDiceGamePanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        JPanel panel = new JPanel(new BorderLayout());
+        JPanel optionsPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
 
-        // Options Panel for dice numbers
-        JPanel optionsPanel = new JPanel(new FlowLayout());
-        ButtonGroup group = new ButtonGroup();
+        diceBetGroup = new ButtonGroup();
         JToggleButton[] diceButtons = new JToggleButton[6];
         for (int i = 1; i <= 6; i++) {
             ImageIcon icon = new ImageIcon(getClass().getResource("/" + i + ".jpg"));
             diceButtons[i - 1] = new JToggleButton(icon);
-            diceButtons[i - 1].setActionCommand(String.valueOf(i)); // Set action command to the dice number
-            group.add(diceButtons[i - 1]);
-            optionsPanel.add(diceButtons[i - 1]);
+            diceButtons[i - 1].setActionCommand(String.valueOf(i));
+            diceButtons[i - 1].setBackground(Color.BLACK);
+            diceButtons[i - 1].setForeground(Color.WHITE);
+            diceBetGroup.add(diceButtons[i - 1]);
+            optionsPanel.add(diceButtons[i - 1], gbc);
         }
-        optionsPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 50, 50)); // Adjust horizontal and vertical gaps
-        // Bet Panel
-        JPanel betPanel = new JPanel(new FlowLayout());
-        JTextField betAmountField = new JTextField(5);
+        diceButtons[0].setSelected(true);
+
+        JPanel betPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        betAmountFieldDG = new JTextField(5);
         JButton placeBetButton = new JButton("Roll Dice");
+        placeBetButton.setBackground(Color.BLACK);
+        placeBetButton.setForeground(Color.WHITE);
+        placeBetButton.setActionCommand("PLACE_BET_DICE");
         placeBetButton.addActionListener(e -> {
-            // Get selected dice number from the group
-            String selectedDiceNumber = null;
-            for (JToggleButton btn : diceButtons) {
-                if (btn.isSelected()) {
-                    selectedDiceNumber = btn.getText();
-                    break;
+            String betAmount = betAmountFieldDG.getText();
+            if (betAmount.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "You must place a bet", "No Bet Placed", JOptionPane.ERROR_MESSAGE);
+            } else {
+                String selectedDiceNumber = getSelectedDiceBet();
+                try {
+                    controller.placeDiceBet(selectedDiceNumber, betAmount);
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(frame, "Error in placing dice bet: " + ex.getMessage());
                 }
             }
-
-            // Get the bet amount from the text field
-            String betAmount = betAmountField.getText();
-
-            // Call controller method to handle the bet
-            controller.placeDiceBet(selectedDiceNumber, betAmount);
         });
 
         betPanel.add(new JLabel("Bet Amount:"));
-        betPanel.add(betAmountField);
+        betPanel.add(betAmountFieldDG);
         betPanel.add(placeBetButton);
 
-        panel.add(optionsPanel);
-        panel.add(betPanel);
+        panel.add(optionsPanel, BorderLayout.CENTER);
+        panel.add(betPanel, BorderLayout.SOUTH);
 
         return panel;
     }
 
+    private JPanel createLeaderboardPanel() {
+        JPanel leaderboardPanel = new JPanel(new BorderLayout());
+
+        JButton refreshButton = new JButton("Refresh Leaderboard");
+        refreshButton.addActionListener(e -> {
+            try {
+                controller.requestLeaderboard();
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(frame, "Error refreshing leaderboard: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        leaderboardPanel.add(new JScrollPane(leaderboardTextArea), BorderLayout.CENTER);
+        leaderboardPanel.add(refreshButton, BorderLayout.SOUTH);
+
+        return leaderboardPanel;
+    }
 
     public void updateGameResult(String result, int winnings) {
-        JOptionPane.showMessageDialog(frame, "Result: " + result + " | Winnings: " + winnings);
+        if(result.equals("Loss")){
+            JOptionPane.showMessageDialog(frame, "You Lose!!! | you lose your bet: $" + winnings);
+        }
+        else if(result.equals("Win")){
+            JOptionPane.showMessageDialog(frame, "You Win!!! | payout: $" + winnings);
+        }
+        else{
+            JOptionPane.showMessageDialog(frame,"No loss or win");
+        }
     }
 
     public void updateUserInfo(String username, int balance) {
-            userInfoLabel.setText("User: " + username + " | Balance: $" + balance);
+        userInfoLabel.setText("User: " + username + " | Balance: $" + balance);
     }
 
     private void createLogoutTab() {
-        JPanel logoutPanel = new JPanel();
+        JPanel logoutPanel = new JPanel(new GridBagLayout());
         JButton logoutButton = new JButton("LOGOUT");
-        logoutButton.addActionListener(e -> {
-            frame.dispose();
-            new Controller ();
-        });
-        logoutPanel.add(logoutButton);
+        logoutButton.addActionListener(e -> frame.dispose());
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.NONE;
+
+        logoutPanel.add(logoutButton, gbc);
         tabPanel.addTab("Logout", logoutPanel);
     }
 
@@ -195,26 +221,44 @@ public class View {
         JOptionPane.showMessageDialog(frame, "Invalid username or password!");
     }
 
-    public void setVisible(boolean visible) {
-        frame.setVisible(visible);
-    }
-
     public JFrame getFrame() {
         return frame;
     }
 
-    public void updateLeaderboardTab(ArrayList<String> leaderboardData) {
-        JTextArea leaderboardTextArea = new JTextArea();
-        for (String entry : leaderboardData) {
-            leaderboardTextArea.append(entry + "\n");
-        }
-        JScrollPane scrollPane = new JScrollPane(leaderboardTextArea);
-        tabPanel.setComponentAt(tabPanel.indexOfTab("Leaderboard"), scrollPane);
+    public String getBetCF() {
+        return betAmountFieldCF.getText();
     }
-    public boolean isLeaderboardTabSelected() {
-        return tabPanel.getSelectedIndex() == tabPanel.indexOfTab("Leaderboard");
+
+    public String getBetDG() {
+        return betAmountFieldDG.getText();
     }
     public String getUsername() {
         return inputUsernameField.getText();
+    }
+
+    public String getPassword() {
+        return inputPasswordField.getText();
+    }
+
+    public String getSelectedCoinBet() {
+        ButtonModel selectedModel = coinBetGroup.getSelection();
+        if (selectedModel != null) {
+            return selectedModel.getActionCommand();
+        }
+        return null;
+    }
+    public String getSelectedDiceBet() {
+        ButtonModel selectedModel = diceBetGroup.getSelection();
+        if (selectedModel != null) {
+            return selectedModel.getActionCommand();
+        }
+        return null;
+    }
+
+    public void updateLeaderboardTab(ArrayList<String> leaderboardData) {
+        leaderboardTextArea.setText("");
+        for (String entry : leaderboardData) {
+            leaderboardTextArea.append(entry + "\n");
+        }
     }
 }
